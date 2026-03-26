@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="LifeTask">
+  <meta name="theme-color" content="#111827">
+  <title>LifeTask</title>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root { --accent: #111827; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #f2f2f7;
+      color: #1c1c1e;
+      min-height: 100vh;
+      min-height: 100dvh;
+    }
+
+    /* ── Screens ── */
+    .screen { display: none; }
+    .screen.active { display: block; }
+
+    /* ── Header ── */
+    header {
+      padding: 52px 20px 18px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: #fff;
+      background: var(--accent);
+      transition: background 0.2s;
+    }
+    header h1 { font-size: 22px; font-weight: 700; }
+
+    .back-btn {
+      background: none;
+      border: none;
+      color: rgba(255,255,255,0.9);
+      font-size: 15px;
+      font-weight: 500;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 2px;
+      font-family: inherit;
+      -webkit-tap-highlight-color: transparent;
+      padding: 4px 0;
+      flex-shrink: 0;
+    }
+    .back-btn .arrow { font-size: 24px; line-height: 1; margin-top: -1px; }
+
+    .header-badge {
+      margin-left: auto;
+      background: rgba(255,255,255,0.2);
+      border-radius: 8px;
+      padding: 3px 10px;
+      font-size: 13px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .header-title {
+      font-size: 17px;
+      font-weight: 700;
+      margin-left: 6px;
+    }
+
+    /* ── Project grid ── */
+    .project-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      padding: 16px;
+    }
+
+    .project-btn {
+      position: relative;
+      background: #fff;
+      border: none;
+      border-radius: 18px;
+      padding: 30px 16px 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.09);
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      transition: transform 0.1s;
+      font-family: inherit;
+      overflow: hidden;
+    }
+    .project-btn:active { transform: scale(0.95); }
+
+    .project-btn::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 5px;
+      background: var(--c);
+    }
+
+    .project-btn .p-emoji { font-size: 34px; }
+    .project-btn .p-name  { font-size: 17px; font-weight: 700; color: #1c1c1e; }
+
+    /* ── Option buttons (task types / categories) ── */
+    .option-grid {
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .option-btn {
+      background: #fff;
+      border: none;
+      border-radius: 14px;
+      padding: 18px 20px;
+      font-size: 17px;
+      font-weight: 500;
+      color: #1c1c1e;
+      text-align: left;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.07);
+      width: 100%;
+      font-family: inherit;
+      -webkit-tap-highlight-color: transparent;
+      transition: background 0.1s, transform 0.1s;
+    }
+    .option-btn:active { background: #f0f0f5; transform: scale(0.98); }
+    .option-btn .chevron { color: #c7c7cc; font-size: 20px; }
+
+    /* ── Form card ── */
+    .card {
+      background: #fff;
+      border-radius: 14px;
+      margin: 16px;
+      padding: 18px 16px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .field label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #6e6e73;
+      margin-bottom: 6px;
+    }
+
+    select, input[type="date"], input[type="text"], textarea {
+      width: 100%;
+      padding: 12px 14px;
+      border: 1.5px solid #e5e5ea;
+      border-radius: 10px;
+      font-size: 16px;
+      color: #1c1c1e;
+      background: #fafafa;
+      outline: none;
+      font-family: inherit;
+      -webkit-appearance: none;
+      appearance: none;
+      transition: border-color 0.15s;
+    }
+    select:focus, input:focus, textarea:focus {
+      border-color: var(--accent);
+      background: #fff;
+    }
+
+    .select-wrap { position: relative; }
+    .select-wrap::after {
+      content: '▾';
+      position: absolute;
+      right: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #8e8e93;
+      pointer-events: none;
+    }
+
+    textarea { resize: none; height: 80px; line-height: 1.5; }
+
+    .submit-btn {
+      border: none;
+      padding: 15px;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      width: 100%;
+      color: #fff;
+      background: var(--accent);
+      transition: opacity 0.15s, transform 0.1s;
+      -webkit-tap-highlight-color: transparent;
+      font-family: inherit;
+    }
+    .submit-btn:active:not(:disabled) { transform: scale(0.97); opacity: 0.85; }
+    .submit-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+    /* ── Status ── */
+    .status {
+      padding: 12px 14px;
+      border-radius: 10px;
+      font-size: 14px;
+      text-align: center;
+      font-weight: 500;
+      display: none;
+    }
+    .status.success { background: #e8f5e9; color: #1a5c34; display: block; }
+    .status.error   { background: #fdecea; color: #c0392b; display: block; }
+
+    .hint {
+      text-align: center;
+      font-size: 12px;
+      color: #aeaeb2;
+      padding: 8px 16px 40px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ════════════════════════════════════════════════
+       Screen 1 — Project selection
+  ════════════════════════════════════════════════ -->
+  <div class="screen active" id="s-home">
+    <header style="background:#111827">
+      <span style="font-size:22px">✦</span>
+      <h1 style="margin-left:8px">LifeTask</h1>
+    </header>
+    <div class="project-grid">
+      <button class="project-btn" style="--c:#1a3c34" onclick="selectProject('pnl')">
+        <span class="p-emoji">🏠</span><span class="p-name">PNL</span>
+      </button>
+      <button class="project-btn" style="--c:#1e3a5f" onclick="selectProject('fluent')">
+        <span class="p-emoji">💼</span><span class="p-name">Fluent</span>
+      </button>
+      <button class="project-btn" style="--c:#7c3218" onclick="selectProject('home')">
+        <span class="p-emoji">🏡</span><span class="p-name">Home</span>
+      </button>
+      <button class="project-btn" style="--c:#4a1a7c" onclick="selectProject('me')">
+        <span class="p-emoji">👤</span><span class="p-name">Me</span>
+      </button>
+    </div>
+    <p class="hint">Tap Share → Add to Home Screen for quick access</p>
+    <p id="todoist-status" style="text-align:center;font-size:12px;color:#aeaeb2;padding:0 16px 16px;display:none"></p>
+  </div>
+
+  <!-- ════════════════════════════════════════════════
+       Screen 2a — PNL: task type
+  ════════════════════════════════════════════════ -->
+  <div class="screen" id="s-pnl-type">
+    <header id="h-pnl-type">
+      <button class="back-btn" onclick="back()"><span class="arrow">‹</span> Back</button>
+      <span class="header-title">PNL</span>
+    </header>
+    <div class="option-grid" id="pnl-type-grid"></div>
+  </div>
+
+  <!-- ════════════════════════════════════════════════
+       Screen 2b — Home: category
+  ════════════════════════════════════════════════ -->
+  <div class="screen" id="s-home-cat">
+    <header id="h-home-cat">
+      <button class="back-btn" onclick="back()"><span class="arrow">‹</span> Back</button>
+      <span class="header-title">Home</span>
+    </header>
+    <div class="option-grid" id="home-cat-grid"></div>
+  </div>
+
+  <!-- ════════════════════════════════════════════════
+       Screen 3a — PNL: property + due date + notes
+  ════════════════════════════════════════════════ -->
+  <div class="screen" id="s-pnl-form">
+    <header id="h-pnl-form">
+      <button class="back-btn" onclick="back()"><span class="arrow">‹</span> Back</button>
+      <span class="header-badge" id="pnl-type-badge"></span>
+    </header>
+    <div class="card">
+      <div class="field">
+        <label>Property</label>
+        <div class="select-wrap"><select id="pnl-property"></select></div>
+      </div>
+      <div class="field">
+        <label>Due date</label>
+        <input type="date" id="pnl-due">
+      </div>
+      <div class="field">
+        <label>Notes <span style="font-weight:400;text-transform:none;letter-spacing:0">(optional)</span></label>
+        <textarea id="pnl-notes" placeholder="Any additional details…"></textarea>
+      </div>
+      <div id="pnl-status" class="status"></div>
+      <button class="submit-btn" id="pnl-submit" onclick="submitPNL()">Add Task</button>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════════
+       Screen 3b — Generic form: Fluent / Home / Me
+  ════════════════════════════════════════════════ -->
+  <div class="screen" id="s-generic">
+    <header id="h-generic">
+      <button class="back-btn" onclick="back()"><span class="arrow">‹</span> Back</button>
+      <span class="header-badge" id="generic-badge"></span>
+    </header>
+    <div class="card">
+      <div class="field">
+        <label>Task</label>
+        <input type="text" id="generic-task" placeholder="What needs doing?">
+      </div>
+      <div class="field">
+        <label>Due date</label>
+        <input type="date" id="generic-due">
+      </div>
+      <div class="field">
+        <label>Notes <span style="font-weight:400;text-transform:none;letter-spacing:0">(optional)</span></label>
+        <textarea id="generic-notes" placeholder="Any additional details…"></textarea>
+      </div>
+      <div id="generic-status" class="status"></div>
+      <button class="submit-btn" id="generic-submit" onclick="submitGeneric()">Add Task</button>
+    </div>
+  </div>
+
+  <script>
+    // ── Config ─────────────────────────────────────────────────────
+    // Replace with your Todoist API token (Settings → Integrations → API token)
+    const TODOIST_TOKEN = '75a10434311445df160503ec0c2b62c10b9249f8';
+    const TODOIST_API   = 'https://api.todoist.com/rest/v2';
+
+    // These must match your Todoist project names exactly
+    const PROJECT_NAMES  = { pnl: 'PNL', fluent: 'Fluent', home: 'Home', me: 'Me' };
+    const PROJECT_COLORS = { pnl: '#1a3c34', fluent: '#1e3a5f', home: '#7c3218', me: '#4a1a7c' };
+
+    const PNL_TASK_TYPES = [
+      'Maintenance', 'Council tax', 'Mortgage', 'Sign AST', 'Switch utilities'
+    ];
+
+    const PNL_PROPERTIES = [
+      'Abbott (23)', 'Alfonso (1)', 'Appleton (64)', 'Bainbridge (1)',
+      'Bells (124)', 'Broxtowe (201)', 'Calverton (24)', 'Campbell (122)',
+      'Copley (79)', 'Doncaster (68b)', 'Doncaster (68C)', 'Dovercourt (76)',
+      'Dudley (8)', 'Eastgate (66)', 'Ellerton (40)', 'Fox Grove (55)',
+      'Grimesthorpe (283)', 'Grove Mount (21)', 'Haven (52)', 'Isandula (17)',
+      'Kimberworth (222)', 'Kimberworth (224)', 'Lockwood (11a)', 'Lynwood (76)',
+      'Maynard (44)', 'Meadow (14)', 'Nottingham (95a)', 'Nottingham (95b)',
+      'Oswald (6)', 'Percy (58)', 'Reynoldson (19)', 'Schofield (94)',
+      'Staveley (316)', 'Town (82)', 'Vernon (35)', 'Westmorland (24)', 'York (1)'
+    ];
+
+    const HOME_CATEGORIES = ['Nikki', 'Eva', 'Jake', 'Money', 'Holidays', 'Admin', 'Other'];
+
+    // ── State ───────────────────────────────────────────────────────
+    var state = { project: null, taskType: null, category: null, projectIds: {} };
+    var navStack    = [];
+    var currentScreen = 's-home';
+
+    // ── Navigation ──────────────────────────────────────────────────
+    function go(screenId) {
+      navStack.push(currentScreen);
+      document.getElementById(currentScreen).classList.remove('active');
+      document.getElementById(screenId).classList.add('active');
+      currentScreen = screenId;
+      window.scrollTo(0, 0);
+    }
+
+    function back() {
+      if (!navStack.length) return;
+      document.getElementById(currentScreen).classList.remove('active');
+      currentScreen = navStack.pop();
+      document.getElementById(currentScreen).classList.add('active');
+      window.scrollTo(0, 0);
+    }
+
+    function goHome() {
+      navStack = [];
+      document.getElementById(currentScreen).classList.remove('active');
+      document.getElementById('s-home').classList.add('active');
+      currentScreen = 's-home';
+      window.scrollTo(0, 0);
+    }
+
+    function setAccent(color) {
+      document.documentElement.style.setProperty('--accent', color);
+      ['h-pnl-type','h-pnl-form','h-home-cat','h-generic'].forEach(function(id) {
+        document.getElementById(id).style.background = color;
+      });
+    }
+
+    // ── Initialise ──────────────────────────────────────────────────
+
+    // PNL task type buttons
+    PNL_TASK_TYPES.forEach(function(t) {
+      var b = document.createElement('button');
+      b.className = 'option-btn';
+      b.innerHTML = '<span>' + t + '</span><span class="chevron">›</span>';
+      b.onclick = function() { selectPNLTaskType(t); };
+      document.getElementById('pnl-type-grid').appendChild(b);
+    });
+
+    // Home category buttons
+    HOME_CATEGORIES.forEach(function(c) {
+      var b = document.createElement('button');
+      b.className = 'option-btn';
+      b.innerHTML = '<span>' + c + '</span><span class="chevron">›</span>';
+      b.onclick = function() { selectHomeCategory(c); };
+      document.getElementById('home-cat-grid').appendChild(b);
+    });
+
+    // PNL property dropdown
+    document.getElementById('pnl-property').innerHTML =
+      PNL_PROPERTIES.map(function(p) {
+        return '<option value="' + esc(p) + '">' + esc(p) + '</option>';
+      }).join('');
+
+    // Default dates
+    document.getElementById('pnl-due').value     = todayISO();
+    document.getElementById('generic-due').value = todayISO();
+
+    // Fetch project IDs from Todoist on load
+    fetchProjectIds();
+
+    // ── Todoist: fetch project IDs ───────────────────────────────────
+    function fetchProjectIds() {
+      return fetch(TODOIST_API + '/projects', {
+        headers: { 'Authorization': 'Bearer ' + TODOIST_TOKEN }
+      })
+      .then(function(r) {
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        return r.json();
+      })
+      .then(function(projects) {
+        if (!Array.isArray(projects)) throw new Error('Unexpected response from Todoist');
+        state.projectIds = {};
+        projects.forEach(function(p) {
+          var key = Object.keys(PROJECT_NAMES).find(function(k) {
+            return PROJECT_NAMES[k].toLowerCase() === p.name.toLowerCase();
+          });
+          if (key) state.projectIds[key] = p.id;
+        });
+        var found = Object.keys(state.projectIds).length;
+        var returnedNames = projects.map(function(p) { return '"' + p.name + '"'; }).join(', ');
+        showTodoistStatus(found === 4
+          ? '✓ Connected to Todoist'
+          : '⚠ Found ' + found + '/4 projects. API returned: ' + returnedNames, found === 4);
+      })
+      .catch(function(err) {
+        showTodoistStatus('⚠ Could not connect to Todoist: ' + err.message, false);
+      });
+    }
+
+    function showTodoistStatus(msg, ok) {
+      var el = document.getElementById('todoist-status');
+      el.textContent = msg;
+      el.style.color = ok ? '#1a5c34' : '#c0392b';
+      el.style.display = 'block';
+    }
+
+    // ── Project selection ────────────────────────────────────────────
+    function selectProject(project) {
+      state.project  = project;
+      state.taskType = null;
+      state.category = null;
+      setAccent(PROJECT_COLORS[project]);
+
+      if      (project === 'pnl')  { go('s-pnl-type'); }
+      else if (project === 'home') { go('s-home-cat'); }
+      else                         { openGenericForm(PROJECT_NAMES[project]); }
+    }
+
+    // ── PNL ─────────────────────────────────────────────────────────
+    function selectPNLTaskType(taskType) {
+      state.taskType = taskType;
+      document.getElementById('pnl-type-badge').textContent = taskType;
+      go('s-pnl-form');
+    }
+
+    function submitPNL() {
+      var property = document.getElementById('pnl-property').value;
+      var dueDate  = document.getElementById('pnl-due').value;
+      var notes    = document.getElementById('pnl-notes').value.trim();
+
+      var task = {
+        content:     state.taskType,
+        project_id:  state.projectIds['pnl'],
+        labels:      [property],
+        description: notes
+      };
+      if (dueDate) task.due_date = dueDate;
+
+      postTask(task, 'pnl-status', 'pnl-submit', function() {
+        document.getElementById('pnl-property').selectedIndex = 0;
+        document.getElementById('pnl-due').value  = todayISO();
+        document.getElementById('pnl-notes').value = '';
+      });
+    }
+
+    // ── Home ─────────────────────────────────────────────────────────
+    function selectHomeCategory(category) {
+      state.category = category;
+      openGenericForm(category);
+    }
+
+    // ── Generic form ─────────────────────────────────────────────────
+    function openGenericForm(badge) {
+      document.getElementById('generic-badge').textContent  = badge;
+      document.getElementById('generic-task').value         = '';
+      document.getElementById('generic-due').value          = todayISO();
+      document.getElementById('generic-notes').value        = '';
+      document.getElementById('generic-status').className   = 'status';
+      go('s-generic');
+    }
+
+    function submitGeneric() {
+      var taskText = document.getElementById('generic-task').value.trim();
+      var dueDate  = document.getElementById('generic-due').value;
+      var notes    = document.getElementById('generic-notes').value.trim();
+
+      if (!taskText) {
+        setStatus('generic-status', 'Please enter a task.', 'error', 3000);
+        return;
+      }
+
+      var task = {
+        content:     taskText,
+        project_id:  state.projectIds[state.project],
+        description: notes
+      };
+      if (dueDate)                                    task.due_date = dueDate;
+      if (state.project === 'home' && state.category) task.labels   = [state.category];
+
+      postTask(task, 'generic-status', 'generic-submit', function() {
+        document.getElementById('generic-task').value  = '';
+        document.getElementById('generic-due').value   = todayISO();
+        document.getElementById('generic-notes').value = '';
+      });
+    }
+
+    // ── Todoist: create task ─────────────────────────────────────────
+    function postTask(task, statusId, btnId, onSuccess) {
+      // If project_id is missing, try re-fetching IDs first (in case page loaded before API responded)
+      if (!task.project_id) {
+        setStatus(statusId, 'Connecting to Todoist…', 'success', 0);
+        fetchProjectIds().then(function() {
+          // Re-resolve the project_id now that we've refetched
+          task.project_id = state.projectIds[state.project];
+          if (!task.project_id) {
+            setStatus(statusId, 'Project "' + PROJECT_NAMES[state.project] + '" not found in Todoist — check the name matches exactly.', 'error', 0);
+          } else {
+            postTask(task, statusId, btnId, onSuccess);
+          }
+        });
+        return;
+      }
+
+      var btn = document.getElementById(btnId);
+      btn.disabled    = true;
+      btn.textContent = 'Adding…';
+
+      fetch(TODOIST_API + '/tasks', {
+        method:  'POST',
+        headers: {
+          'Authorization': 'Bearer ' + TODOIST_TOKEN,
+          'Content-Type':  'application/json'
+        },
+        body: JSON.stringify(task)
+      })
+      .then(function(r) {
+        if (r.ok) {
+          setStatus(statusId, '✓ Task added', 'success', 0);
+          onSuccess && onSuccess();
+          setTimeout(goHome, 1800);
+        } else {
+          r.json().then(function(e) {
+            setStatus(statusId, 'Error: ' + (e.error || r.status), 'error', 5000);
+          });
+        }
+      })
+      .catch(function() {
+        setStatus(statusId, 'Network error — please try again.', 'error', 4000);
+      })
+      .finally(function() {
+        btn.disabled    = false;
+        btn.textContent = 'Add Task';
+      });
+    }
+
+    // ── Helpers ──────────────────────────────────────────────────────
+    function todayISO() { return new Date().toISOString().split('T')[0]; }
+
+    function esc(s) {
+      return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    function setStatus(id, msg, type, duration) {
+      var el = document.getElementById(id);
+      el.textContent = msg;
+      el.className   = 'status ' + type;
+      if (duration > 0) setTimeout(function() {
+        el.className = 'status'; el.textContent = '';
+      }, duration);
+    }
+  </script>
+
+</body>
+</html>
