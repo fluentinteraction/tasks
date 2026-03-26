@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="PNL Tasks">
+  <meta name="theme-color" content="#1a3c34">
+  <title>PNL Tasks</title>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --green:      #1a3c34;
+      --green-dark: #122b25;
+      --green-lite: #e8f5e9;
+      --red-lite:   #fdecea;
+      --red:        #c0392b;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #f2f2f7;
+      color: #1c1c1e;
+      min-height: 100vh;
+      min-height: 100dvh;
+    }
+
+    header {
+      background: var(--green);
+      color: #fff;
+      padding: 52px 20px 18px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    header .icon { font-size: 26px; line-height: 1; }
+    header h1   { font-size: 20px; font-weight: 700; }
+    header p    { font-size: 13px; opacity: 0.65; margin-top: 2px; }
+
+    .card {
+      background: #fff;
+      border-radius: 14px;
+      margin: 16px;
+      padding: 18px 16px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .field label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #6e6e73;
+      margin-bottom: 6px;
+    }
+
+    select, input[type="date"], textarea {
+      width: 100%;
+      padding: 12px 14px;
+      border: 1.5px solid #e5e5ea;
+      border-radius: 10px;
+      font-size: 16px;
+      color: #1c1c1e;
+      background: #fafafa;
+      outline: none;
+      font-family: inherit;
+      -webkit-appearance: none;
+      appearance: none;
+      transition: border-color 0.15s;
+    }
+    select:focus, input[type="date"]:focus, textarea:focus {
+      border-color: var(--green);
+      background: #fff;
+    }
+
+    .select-wrap { position: relative; }
+    .select-wrap::after {
+      content: '▾';
+      position: absolute;
+      right: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #8e8e93;
+      pointer-events: none;
+      font-size: 13px;
+    }
+
+    textarea { resize: none; height: 80px; line-height: 1.5; }
+
+    .btn {
+      background: var(--green);
+      color: #fff;
+      border: none;
+      padding: 15px;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      width: 100%;
+      transition: background 0.15s, transform 0.1s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .btn:active:not(:disabled) { transform: scale(0.97); background: var(--green-dark); }
+    .btn:disabled { background: #c7c7cc; cursor: not-allowed; }
+
+    .skeleton {
+      background: linear-gradient(90deg, #f0f0f0 25%, #e4e4e4 50%, #f0f0f0 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.2s infinite;
+      border-radius: 10px;
+      height: 48px;
+    }
+    @keyframes shimmer { to { background-position: -200% 0; } }
+
+    .status {
+      padding: 12px 14px;
+      border-radius: 10px;
+      font-size: 14px;
+      text-align: center;
+      line-height: 1.4;
+      font-weight: 500;
+      display: none;
+    }
+    .status.success { background: var(--green-lite); color: var(--green); display: block; }
+    .status.error   { background: var(--red-lite);   color: var(--red);   display: block; }
+
+    .hint {
+      text-align: center;
+      font-size: 12px;
+      color: #aeaeb2;
+      padding: 4px 16px 40px;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="icon">🏠</div>
+    <div>
+      <h1>PNL Property Tasks</h1>
+      <p>Add a task to your spreadsheet</p>
+    </div>
+  </header>
+
+  <div class="card">
+
+    <div class="field">
+      <label>Property</label>
+      <div id="propertySkeleton" class="skeleton"></div>
+      <div class="select-wrap" id="propertyWrap" style="display:none">
+        <select id="property"></select>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Task type</label>
+      <div id="taskTypeSkeleton" class="skeleton"></div>
+      <div class="select-wrap" id="taskTypeWrap" style="display:none">
+        <select id="taskType"></select>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Due date</label>
+      <input type="date" id="dueDate">
+    </div>
+
+    <div class="field">
+      <label>Notes <span style="font-weight:400;text-transform:none;letter-spacing:0">(optional)</span></label>
+      <textarea id="notes" placeholder="Any additional details…"></textarea>
+    </div>
+
+    <div id="status" class="status"></div>
+
+    <button class="btn" id="submit" disabled>Add Task</button>
+
+  </div>
+
+  <p class="hint">Tip: tap Share → Add to Home Screen for quick access</p>
+
+  <script>
+    const API = 'https://script.google.com/macros/s/AKfycbyF8MIDWeCvon4irjwL0pHo23QSrMDdPg8PNBxcWUuWiIyvKJt1ewqw6Z3RUMYnjwTi/exec';
+
+    const propertySelect = document.getElementById('property');
+    const taskTypeSelect  = document.getElementById('taskType');
+    const dueDateInput    = document.getElementById('dueDate');
+    const notesInput      = document.getElementById('notes');
+    const submitBtn       = document.getElementById('submit');
+    const statusDiv       = document.getElementById('status');
+
+    dueDateInput.value = new Date().toISOString().split('T')[0];
+
+    // ── Load dropdowns ──────────────────────────────────────────
+    fetch(API + '?action=getVariables', { redirect: 'follow' })
+      .then(r => r.json())
+      .then(data => {
+        propertySelect.innerHTML = data.properties
+          .map(p => `<option value="${esc(p)}">${esc(p)}</option>`).join('');
+        taskTypeSelect.innerHTML = data.taskTypes
+          .map(t => `<option value="${esc(t)}">${esc(t)}</option>`).join('');
+
+        document.getElementById('propertySkeleton').style.display = 'none';
+        document.getElementById('taskTypeSkeleton').style.display = 'none';
+        document.getElementById('propertyWrap').style.display     = 'block';
+        document.getElementById('taskTypeWrap').style.display     = 'block';
+        submitBtn.disabled = false;
+      })
+      .catch(() => showStatus('Could not load lists — check your connection.', 'error', 0));
+
+    // ── Submit ──────────────────────────────────────────────────
+    submitBtn.addEventListener('click', function() {
+      var payload = {
+        property: propertySelect.value,
+        taskType: taskTypeSelect.value,
+        dueDate:  dueDateInput.value ? formatDate(dueDateInput.value) : '',
+        notes:    notesInput.value.trim()
+      };
+
+      submitBtn.disabled    = true;
+      submitBtn.textContent = 'Adding…';
+
+      fetch(API, {
+        method:   'POST',
+        headers:  { 'Content-Type': 'text/plain' },
+        body:     JSON.stringify(payload),
+        redirect: 'follow'
+      })
+      .then(r => r.json())
+      .then(result => {
+        if (result.success) {
+          showStatus('✓ Task added successfully', 'success', 3000);
+          propertySelect.selectedIndex = 0;
+          taskTypeSelect.selectedIndex = 0;
+          dueDateInput.value = new Date().toISOString().split('T')[0];
+          notesInput.value   = '';
+        } else {
+          showStatus('Something went wrong — please try again.', 'error', 4000);
+        }
+      })
+      .catch(() => showStatus('Network error — please try again.', 'error', 4000))
+      .finally(() => {
+        submitBtn.disabled    = false;
+        submitBtn.textContent = 'Add Task';
+      });
+    });
+
+    // ── Helpers ─────────────────────────────────────────────────
+    function formatDate(iso) {
+      var p = iso.split('-');
+      return p[2] + '/' + p[1] + '/' + p[0];
+    }
+    function esc(s) {
+      return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+    function showStatus(msg, type, duration) {
+      statusDiv.textContent = msg;
+      statusDiv.className   = 'status ' + type;
+      if (duration > 0) setTimeout(function() {
+        statusDiv.className = 'status'; statusDiv.textContent = '';
+      }, duration);
+    }
+  </script>
+
+</body>
+</html>
