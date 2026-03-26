@@ -28,6 +28,7 @@
       min-height: 100dvh;
     }
 
+    /* ── Header ── */
     header {
       background: var(--green);
       color: #fff;
@@ -35,10 +36,72 @@
       display: flex;
       align-items: center;
       gap: 12px;
+      position: relative;
     }
     header .icon { font-size: 26px; line-height: 1; }
-    header h1   { font-size: 20px; font-weight: 700; }
-    header p    { font-size: 13px; opacity: 0.65; margin-top: 2px; }
+    header h1   { font-size: 22px; font-weight: 700; }
+
+    .back-btn {
+      background: none;
+      border: none;
+      color: rgba(255,255,255,0.85);
+      font-size: 15px;
+      font-weight: 500;
+      cursor: pointer;
+      padding: 4px 0;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      -webkit-tap-highlight-color: transparent;
+      font-family: inherit;
+    }
+    .back-btn:active { opacity: 0.6; }
+    .back-btn .arrow { font-size: 20px; line-height: 1; }
+
+    /* ── Screens ── */
+    .screen { display: none; }
+    .screen.active { display: block; }
+
+    /* ── Task type buttons (Page 1) ── */
+    .task-grid {
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .task-btn {
+      background: #fff;
+      border: none;
+      border-radius: 14px;
+      padding: 18px 20px;
+      font-size: 17px;
+      font-weight: 500;
+      color: #1c1c1e;
+      text-align: left;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.07);
+      transition: background 0.12s, transform 0.1s;
+      width: 100%;
+      font-family: inherit;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .task-btn:active { background: #f0f0f5; transform: scale(0.98); }
+    .task-btn .chevron { color: #c7c7cc; font-size: 18px; }
+
+    /* ── Detail form (Page 2) ── */
+    .selected-task {
+      background: rgba(255,255,255,0.15);
+      border-radius: 8px;
+      padding: 4px 10px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #fff;
+      margin-left: auto;
+    }
 
     .card {
       background: #fff;
@@ -106,19 +169,22 @@
       width: 100%;
       transition: background 0.15s, transform 0.1s;
       -webkit-tap-highlight-color: transparent;
+      font-family: inherit;
     }
     .btn:active:not(:disabled) { transform: scale(0.97); background: var(--green-dark); }
     .btn:disabled { background: #c7c7cc; cursor: not-allowed; }
 
+    /* ── Skeleton ── */
     .skeleton {
       background: linear-gradient(90deg, #f0f0f0 25%, #e4e4e4 50%, #f0f0f0 75%);
       background-size: 200% 100%;
       animation: shimmer 1.2s infinite;
-      border-radius: 10px;
-      height: 48px;
+      border-radius: 14px;
+      height: 62px;
     }
     @keyframes shimmer { to { background-position: -200% 0; } }
 
+    /* ── Status ── */
     .status {
       padding: 12px 14px;
       border-radius: 10px;
@@ -141,84 +207,127 @@
 </head>
 <body>
 
-  <header>
-    <div class="icon">🏠</div>
-    <div>
-      <h1>PNL Property Tasks</h1>
-      <p>Add a task to your spreadsheet</p>
-    </div>
-  </header>
+  <!-- ── Page 1: Task type selection ── -->
+  <div class="screen active" id="screen1">
+    <header>
+      <div class="icon">🏠</div>
+      <h1>PNL Tasks</h1>
+    </header>
 
-  <div class="card">
-
-    <div class="field">
-      <label>Property</label>
-      <div id="propertySkeleton" class="skeleton"></div>
-      <div class="select-wrap" id="propertyWrap" style="display:none">
-        <select id="property"></select>
-      </div>
-    </div>
-
-    <div class="field">
-      <label>Task type</label>
-      <div id="taskTypeSkeleton" class="skeleton"></div>
-      <div class="select-wrap" id="taskTypeWrap" style="display:none">
-        <select id="taskType"></select>
-      </div>
-    </div>
-
-    <div class="field">
-      <label>Due date</label>
-      <input type="date" id="dueDate">
-    </div>
-
-    <div class="field">
-      <label>Notes <span style="font-weight:400;text-transform:none;letter-spacing:0">(optional)</span></label>
-      <textarea id="notes" placeholder="Any additional details…"></textarea>
-    </div>
-
-    <div id="status" class="status"></div>
-
-    <button class="btn" id="submit" disabled>Add Task</button>
-
+    <div class="task-grid" id="taskGrid"></div>
   </div>
 
-  <p class="hint">Tip: tap Share → Add to Home Screen for quick access</p>
+  <!-- ── Page 2: Task details ── -->
+  <div class="screen" id="screen2">
+    <header>
+      <button class="back-btn" id="backBtn">
+        <span class="arrow">‹</span> Back
+      </button>
+      <span class="selected-task" id="selectedTaskLabel"></span>
+    </header>
+
+    <div class="card">
+
+      <div class="field">
+        <label>Property</label>
+        <div class="select-wrap">
+          <select id="property"></select>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Due date</label>
+        <input type="date" id="dueDate">
+      </div>
+
+      <div class="field">
+        <label>Notes <span style="font-weight:400;text-transform:none;letter-spacing:0">(optional)</span></label>
+        <textarea id="notes" placeholder="Any additional details…"></textarea>
+      </div>
+
+      <div id="status" class="status"></div>
+
+      <button class="btn" id="submit">Add Task</button>
+
+    </div>
+
+    <p class="hint">Tip: tap Share → Add to Home Screen for quick access</p>
+  </div>
 
   <script>
     const API = 'https://script.google.com/macros/s/AKfycbyF8MIDWeCvon4irjwL0pHo23QSrMDdPg8PNBxcWUuWiIyvKJt1ewqw6Z3RUMYnjwTi/exec';
 
-    const propertySelect = document.getElementById('property');
-    const taskTypeSelect  = document.getElementById('taskType');
+    const screen1         = document.getElementById('screen1');
+    const screen2         = document.getElementById('screen2');
+    const taskGrid        = document.getElementById('taskGrid');
+    const propertySelect  = document.getElementById('property');
     const dueDateInput    = document.getElementById('dueDate');
     const notesInput      = document.getElementById('notes');
     const submitBtn       = document.getElementById('submit');
     const statusDiv       = document.getElementById('status');
+    const backBtn         = document.getElementById('backBtn');
+    const selectedLabel   = document.getElementById('selectedTaskLabel');
+
+    const TASK_TYPES = [
+      'Maintenance',
+      'Council tax',
+      'Mortgage',
+      'Sign AST',
+      'Switch utilities'
+    ];
+
+    const PROPERTIES = [
+      'Abbott (23)', 'Alfonso (1)', 'Appleton (64)', 'Bainbridge (1)',
+      'Bells (124)', 'Broxtowe (201)', 'Calverton (24)', 'Campbell (122)',
+      'Copley (79)', 'Doncaster (68b)', 'Doncaster (68C)', 'Dovercourt (76)',
+      'Dudley (8)', 'Eastgate (66)', 'Ellerton (40)', 'Fox Grove (55)',
+      'Grimesthorpe (283)', 'Grove Mount (21)', 'Haven (52)', 'Isandula (17)',
+      'Kimberworth (222)', 'Kimberworth (224)', 'Lockwood (11a)', 'Lynwood (76)',
+      'Maynard (44)', 'Meadow (14)', 'Nottingham (95a)', 'Nottingham (95b)',
+      'Oswald (6)', 'Percy (58)', 'Reynoldson (19)', 'Schofield (94)',
+      'Staveley (316)', 'Town (82)', 'Vernon (35)', 'Westmorland (24)', 'York (1)'
+    ];
+
+    let selectedTaskType = '';
 
     dueDateInput.value = new Date().toISOString().split('T')[0];
 
-    // ── Load dropdowns ──────────────────────────────────────────
-    fetch(API + '?action=getVariables', { redirect: 'follow' })
-      .then(r => r.json())
-      .then(data => {
-        propertySelect.innerHTML = data.properties
-          .map(p => `<option value="${esc(p)}">${esc(p)}</option>`).join('');
-        taskTypeSelect.innerHTML = data.taskTypes
-          .map(t => `<option value="${esc(t)}">${esc(t)}</option>`).join('');
+    // ── Build task type buttons (instant — no API call) ─────────
+    TASK_TYPES.forEach(function(t) {
+      var btn = document.createElement('button');
+      btn.className = 'task-btn';
+      btn.innerHTML = '<span>' + esc(t) + '</span><span class="chevron">›</span>';
+      btn.addEventListener('click', function() { selectTaskType(t); });
+      taskGrid.appendChild(btn);
+    });
 
-        document.getElementById('propertySkeleton').style.display = 'none';
-        document.getElementById('taskTypeSkeleton').style.display = 'none';
-        document.getElementById('propertyWrap').style.display     = 'block';
-        document.getElementById('taskTypeWrap').style.display     = 'block';
-        submitBtn.disabled = false;
-      })
-      .catch(() => showStatus('Could not load lists — check your connection.', 'error', 0));
+    // ── Populate property dropdown (instant — no API call) ──────
+    propertySelect.innerHTML = PROPERTIES
+      .map(p => `<option value="${esc(p)}">${esc(p)}</option>`).join('');
+
+    // ── Navigate to page 2 ──────────────────────────────────────
+    function selectTaskType(taskType) {
+      selectedTaskType = taskType;
+      selectedLabel.textContent = taskType;
+      screen1.classList.remove('active');
+      screen2.classList.add('active');
+      window.scrollTo(0, 0);
+    }
+
+    // ── Back button ─────────────────────────────────────────────
+    backBtn.addEventListener('click', function() {
+      screen2.classList.remove('active');
+      screen1.classList.add('active');
+      statusDiv.className = 'status';
+      statusDiv.textContent = '';
+      window.scrollTo(0, 0);
+    });
 
     // ── Submit ──────────────────────────────────────────────────
     submitBtn.addEventListener('click', function() {
       var payload = {
         property: propertySelect.value,
-        taskType: taskTypeSelect.value,
+        taskType: selectedTaskType,
         dueDate:  dueDateInput.value ? formatDate(dueDateInput.value) : '',
         notes:    notesInput.value.trim()
       };
@@ -233,19 +342,26 @@
         redirect: 'follow'
       })
       .then(r => r.json())
-      .then(result => {
+      .then(function(result) {
         if (result.success) {
-          showStatus('✓ Task added successfully', 'success', 3000);
-          propertySelect.selectedIndex = 0;
-          taskTypeSelect.selectedIndex = 0;
-          dueDateInput.value = new Date().toISOString().split('T')[0];
-          notesInput.value   = '';
+          showStatus('✓ Task added successfully', 'success', 2500);
+          // Reset and go back to page 1 after short delay
+          setTimeout(function() {
+            propertySelect.selectedIndex = 0;
+            dueDateInput.value = new Date().toISOString().split('T')[0];
+            notesInput.value   = '';
+            screen2.classList.remove('active');
+            screen1.classList.add('active');
+            window.scrollTo(0, 0);
+          }, 2500);
         } else {
           showStatus('Something went wrong — please try again.', 'error', 4000);
         }
       })
-      .catch(() => showStatus('Network error — please try again.', 'error', 4000))
-      .finally(() => {
+      .catch(function() {
+        showStatus('Network error — please try again.', 'error', 4000);
+      })
+      .finally(function() {
         submitBtn.disabled    = false;
         submitBtn.textContent = 'Add Task';
       });
@@ -263,7 +379,8 @@
       statusDiv.textContent = msg;
       statusDiv.className   = 'status ' + type;
       if (duration > 0) setTimeout(function() {
-        statusDiv.className = 'status'; statusDiv.textContent = '';
+        statusDiv.className = 'status';
+        statusDiv.textContent = '';
       }, duration);
     }
   </script>
